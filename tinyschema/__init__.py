@@ -149,7 +149,7 @@ def as_schema(cls):
     if not hasattr(cls, "__iter__"):
         def __iter__(self):
             for name in self.fieldnames:
-                raise getattr(self, name)
+                yield getattr(self, name)
         cls.__iter__ = __iter__
 
     # validate
