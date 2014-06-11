@@ -7,6 +7,13 @@ from collections import (
     OrderedDict
 )
 from .langhelpers import gensym
+from .compat import (
+    text_,
+    text_type,
+    string_types,
+    xrange,
+    is_nonstr_iter,
+    )
 
 
 class ValidationError(Exception):
@@ -146,8 +153,8 @@ def as_schema(cls):
         cls.__iter__ = __iter__
 
     # validate
-    if not hasattr(cls, "validate"):
-        def validate(self):
+    if not hasattr(cls, "_validate"):
+        def _validate(self):
             errors = defaultdict(list)
             values = OrderedDict()
             for name in self.fieldnames:
@@ -158,10 +165,15 @@ def as_schema(cls):
                     values[name] = validated
                     current.renewal(validated)
                 except ValidationError as e:
-                    errors[e.name].append(e)
+                    errors[e.name].append(e.error)
             if errors:
                 raise ErrorRaised(errors=errors)
             return values
+        cls._validate = _validate
+
+    if not hasattr(cls, "validate"):
+        def validate(self):
+            return self._validate()
         cls.validate = validate
 
     # init
@@ -177,6 +189,90 @@ def __init__(self, {kwargs}):
     return cls
 
 
+# validator
+class Any(object):
+    def __init__(self, validators):
+        self.validators = validators
+
+    def __call__(self, val, options):
+        errors = []
+        for v in self.validators:
+            try:
+                val = v(val, options)
+                return val
+            except Exception as e:
+                errors.append(e)
+        raise ValidationError(error=errors[0])
+
+import re
+
+
+class Regex(object):
+    def __init__(self, rx):
+        if isinstance(rx, string_types):
+            self.rx = re.compile(rx)
+        else:
+            self.rx = rx
+
+    def __call__(self, val, options):
+        if self.rx.match(val) is None:
+            raise ValueError(self.rx.pattern)
+        return val
+
+EMAIL_RE = "(?i)^[A-Z0-9._%!#$%&'*+-/=?^_`{|}~()]+@[A-Z0-9]+([.-][A-Z0-9]+)*\.[A-Z]{2,22}$"
+EMail = partial(Regex, EMAIL_RE)
+
+
+class Range(object):
+    def __init__(self, min, max):
+        self.min = min
+        self.max = max
+
+    def __call__(self, val, options):
+        if min > self.val:
+            raise ValueError(self.min)
+        if max < self.val:
+            raise ValueError(self.max)
+        return val
+
+
+class Length(object):
+    def __init__(self, min=None, max=None):
+        self.min = min
+        self.max = max
+
+    def __call__(self, val, options):
+        if min and min > self.val:
+            raise ValueError(self.min)
+        if max and max < self.val:
+            raise ValueError(self.max)
+        return val
+
+
+class OneOf(object):
+    def __init__(self, choices):
+        self.choices = choices
+
+    def __call__(self, val, options):
+        if val not in self.choices:
+            raise ValueError(self.choices)
+        return val
+
+
+class ContainsOnly(object):
+    def __init__(self, choices):
+        self.choices = choices
+
+    def __call__(self, val, options):
+        if not set(val).issubset(self.choices):
+            raise ValueError(self.choices)
+        return val
+
+URL_REGEX = r"""(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))""" # "emacs!
+
+URL = Regex(URL_REGEX)
+
+
 def reject_None(val, options):
     if options.get("required", True):
         return val
@@ -187,10 +283,20 @@ def parse_int(val, options):
     return int(val)
 
 
-def validate_positive(val, option):
+def parse_bool(val, options):
+    return bool(val)
+
+
+def parse_text(val, options):
+    return text_(val)
+
+
+def positive(val, option):
     assert val >= 0
     return val
 
+
+# SchemaFactory
 
 def Container(schema):
     return PartialApplicationLike(partial(_Container, schema)).partial
@@ -201,5 +307,7 @@ def Collection(schema):
 
 Field = PartialApplicationLike(_Field, reject_None).partial
 IntegerField = Field(post=parse_int).partial
-PositiveIntegerField = IntegerField(post=validate_positive).partial
+BooleanField = Field(post=parse_bool).partial
+TextField = Field(post=parse_text).partial
 
+PositiveIntegerField = IntegerField(post=positive).partial
