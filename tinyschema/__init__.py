@@ -19,9 +19,7 @@ import gettext
 import translationstring
 import os.path
 here = os.path.abspath(os.path.dirname(__file__))
-print(gettext.find("tinyschema", os.path.join(here, "locales")))
-translation = gettext.translation("tinyschema", os.path.join(here, "locales"), codeset="utf8")
-
+translation = None
 
 def create_translator(languages=None):
     try:
@@ -419,8 +417,8 @@ def positive(val, option):
         raise ValidationError(None, message=(get_translator())(_("${val} is smaller than zero", mapping={"val": val})))
     return val
 
-
 # SchemaFactory
+
 
 def Container(schema):
     return PartialApplicationLike(partial(_Container, schema), required=True).partial
@@ -444,3 +442,4 @@ PositiveIntegerField = IntegerField(post=positive).partial
 def equals(x, y):
     if x != y:
         raise ValueError("not equal")
+
