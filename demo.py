@@ -8,7 +8,7 @@ class Point(object):
     y = t.column(t.IntegerField)
     z = t.column(t.IntegerField, required=False)
 
-pt = Point(x=10, y=20)
+pt = Point(x=10, y="20")
 
 assert (pt.x.name) == "x"
 assert (pt.x.label) == "横"

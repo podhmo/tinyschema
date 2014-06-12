@@ -35,3 +35,8 @@ try:
     from cPickle import loads, dumps, HIGHEST_PROTOCOL
 except ImportError: # pragma: no cover
     from pickle import loads, dumps, HIGHEST_PROTOCOL
+
+if PY3:
+    FileNotFoundError = FileNotFoundError
+else:
+    FileNotFoundError = IOError

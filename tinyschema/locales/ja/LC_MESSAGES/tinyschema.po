@@ -18,69 +18,69 @@ msgstr ""
 #: ./__init__.py:301
 #, c-format, python-format
 msgid "invalid email ${val}"
-msgstr ""
+msgstr "${val}は不正なメールアドレスです"
 
 #: ./__init__.py:306
 #, c-format, python-format
 msgid "${val} is not url"
-msgstr ""
+msgstr "${val}は正しいurlではありません"
 
 #: ./__init__.py:399
 #, c-format, python-format
 msgid "${val} is smaller than zero"
-msgstr ""
+msgstr "${val}が0より小さいです"
 
 #: ./__init__.py:373
 #, c-format, python-format
 msgid "${val} is not int"
-msgstr ""
+msgstr "${val}は整数ではありません"
 
 #: ./__init__.py:380
 #, c-format, python-format
 msgid "${val} is not bool"
-msgstr ""
+msgstr "${val}は真偽値ではありません"
 
 #: ./__init__.py:387
 #, c-format, python-format
 msgid "${val} is not float"
-msgstr ""
+msgstr "${val}は数値ではありません"
 
 #: ./__init__.py:394
 #, c-format, python-format
 msgid "${val} is not text"
-msgstr ""
+msgstr "${val}は文字列ではありません"
 
 #: ./__init__.py:316
 #, c-format, python-format
 msgid "${val} is smaller than ${min}"
-msgstr ""
+msgstr "${val}が${min}より小さいです。"
 
 #: ./__init__.py:318
 #, c-format, python-format
 msgid "${val} is bigger than ${max}"
-msgstr ""
+msgstr "${val}が${max}より大きいです"
 
 #: ./__init__.py:329
 #, c-format, python-format
 msgid "${val} is shorter than ${min}"
-msgstr ""
+msgstr "${val}が${min}より短いです"
 
 #: ./__init__.py:331
 #, c-format, python-format
 msgid "${val} is longer than ${max}"
-msgstr ""
+msgstr "${val}が${max}より長いです"
 
 #: ./__init__.py:342
 #, c-format, python-format
 msgid "${val} is not in ${candidates}"
-msgstr ""
+msgstr "${val}は${candidates}に含まれていません"
 
 #: ./__init__.py:355
 #, c-format, python-format
 msgid "${val} is not subset of  ${candidates}"
-msgstr ""
+msgstr "${val}の全てが${candidates}の中にありません"
 
 #: ./__init__.py:284
 #, c-format, python-format
 msgid "${val} is not validation suceeed."
-msgstr ""
+msgstr "${val}についての検証について、どれも成功しませんでした"
