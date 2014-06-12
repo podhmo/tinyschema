@@ -22,6 +22,18 @@ sample
     assert (pt.x.label) == "横"
 
 
+    @t.add_validator("equals")
+    def equals(x, y):
+        if x != y:
+            raise ValueError("not equal")
+
+
+    pt2 = t.lookup("equals", ["x", "y"])(pt)
+    try:
+        pt2.validate()
+    except t.ErrorRaised as e:
+        print(e)
+
 
 
     @t.as_schema
