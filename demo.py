@@ -53,7 +53,7 @@ pair = Pair(l=Point(x=10, y=200), r=Point(x=50, y=200))
 
 for f in pair:
     print(u"<div class='{class_}'>({x}, {y})</div>".format(x=f.x.value, y=f.y.value, class_=f.options["class_"]))
-# <div>(10, 200)</div>
-# <div>(50, 200)</div>
+# <div class='left'>(10, 200)</div>
+# <div class='right'>(50, 200)</div>
 
 
