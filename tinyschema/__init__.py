@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 import logging
 logger = logging.getLogger(__name__)
+import re
 from functools import partial
 from collections import (
     defaultdict,
@@ -14,13 +15,33 @@ from .compat import (
     xrange,
     is_nonstr_iter,
     )
+import gettext
+import translationstring
+import os.path
+here = os.path.abspath(os.path.dirname(__file__))
+print(gettext.find("tinyschema", os.path.join(here, "locales")))
+translation = gettext.translation("tinyschema", os.path.join(here, "locales"), codeset="utf8")
+
+
+def create_translator(languages=None):
+    translation = gettext.translation("tinyschema", os.path.join(here, "locales"), codeset="utf8")
+    return translationstring.Translator(translation)
+
+
+def set_translator(languages=None):
+    global translator
+    translator = create_translator(languages)
+
+translator = create_translator()
+_ = translationstring.TranslationStringFactory('tinyschema')
 
 
 class ValidationError(Exception):
-    def __init__(self, name, error, names=None):
+    def __init__(self, error, name=None, names=None, message=None):
         self.name = name
         self.error = error
         self.names = names or [name]
+        self.message = message
 
 
 class ErrorRaised(Exception):
@@ -172,7 +193,10 @@ def as_schema(cls):
                     values[name] = validated
                     current.renewal(validated)
                 except ValidationError as e:
-                    errors[e.name].append(e.error)
+                    if e.message is not None:
+                        errors[e.name].append(e.message)
+                    else:
+                        errors[e.name].append(e.error)
             if errors:
                 raise ErrorRaised(errors=errors)
             return values
@@ -221,7 +245,13 @@ class Validator(object):
         except Exception as e:
             errors = defaultdict(list)
             first_name = self.names[0]
-            errors[first_name].append(ValidationError(first_name, e, self.names))
+            if isinstance(e, ValidationError):
+                if e.message:
+                    errors[first_name].append(e.message)
+                else:
+                    errors[first_name].append(e)
+            else:
+                errors[first_name].append(ValidationError(e, name=first_name, names=self.names))
             raise ErrorRaised(errors)
         return data
 
@@ -250,7 +280,7 @@ def add_validator(name, lookup=DefaultValidatorLookup):
     return wrap
 
 
-# validator
+# validation
 class Any(object):
     def __init__(self, validators):
         self.validators = validators
@@ -261,27 +291,30 @@ class Any(object):
             try:
                 val = v(val, options)
                 return val
-            except Exception as e:
-                errors.append(e)
-        raise ValidationError(error=errors[0])
-
-import re
+            except Exception:
+                errors.append(translator(_("${val} is not validation suceeed.", mapping={"val": val})))
+        e = errors[0]
+        raise ValidationError(error=e, message=e.message)
 
 
 class Regex(object):
-    def __init__(self, rx):
+    def __init__(self, rx, msg=None):
         if isinstance(rx, string_types):
             self.rx = re.compile(rx)
+            self.msg = msg
         else:
             self.rx = rx
 
     def __call__(self, val, options):
         if self.rx.match(val) is None:
-            raise ValueError(self.rx.pattern)
+            if self.msg:
+                msg = self.msg(val)
+            msg = _("invalid email ${val}", mapping={"val": val})
+            raise ValidationError(message=translator(msg))
         return val
 
 EMAIL_RE = "(?i)^[A-Z0-9._%!#$%&'*+-/=?^_`{|}~()]+@[A-Z0-9]+([.-][A-Z0-9]+)*\.[A-Z]{2,22}$"
-EMail = partial(Regex, EMAIL_RE)
+EMail = partial(Regex, EMAIL_RE, lambda val: translator(_("${val} is not url", mapping={"val": val})))
 
 
 class Range(object):
@@ -290,10 +323,10 @@ class Range(object):
         self.max = max
 
     def __call__(self, val, options):
-        if min > self.val:
-            raise ValueError(self.min)
-        if max < self.val:
-            raise ValueError(self.max)
+        if self.min > self.val:
+            raise ValidationError(message=translator(_("${val} is smaller than ${min}", mapping={"val": val, "min": self.min})))
+        if self.max < self.val:
+            raise ValidationError(message=translator(_("${val} is bigger than ${max}", mapping={"val": val, "max": self.max})))
         return val
 
 
@@ -304,9 +337,9 @@ class Length(object):
 
     def __call__(self, val, options):
         if min and min > self.val:
-            raise ValueError(self.min)
+            raise ValidationError(message=translator(_("${val} is shorter than ${min}", mapping={"val": val, "min": self.min})))
         if max and max < self.val:
-            raise ValueError(self.max)
+            raise ValidationError(message=translator(_("${val} is longer than ${max}", mapping={"val": val, "max": self.max})))
         return val
 
 
@@ -316,6 +349,8 @@ class OneOf(object):
 
     def __call__(self, val, options):
         if val not in self.choices:
+            candidates = u', '.join([text_(x) for x in self.choices])
+            raise ValidationError(message=translator(_("${val} is not in ${candidates}", mapping={"val": val, "candidates": candidates})))
             raise ValueError(self.choices)
         return val
 
@@ -326,7 +361,9 @@ class Subset(object):
 
     def __call__(self, val, options):
         if not set(val).issubset(self.choices):
-            raise ValueError(self.choices)
+            sval = u', '.join([text_(x) for x in val])
+            candidates = u', '.join([text_(x) for x in self.choices])
+            raise ValidationError(message=translator(_("${val} is not subset of  ${candidates}", mapping={"val": sval, "candidates": candidates})))
         return val
 
 URL_REGEX = r"""(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))"""  # "emacs!
@@ -341,19 +378,36 @@ def reject_None(val, options):
 
 
 def parse_int(val, options):
-    return int(val)
+    try:
+        return int(val)
+    except ValueError:
+        raise ValidationError(translator(_("${val} is not int", mapping={"val": val})))
 
 
 def parse_bool(val, options):
-    return bool(val)
+    try:
+        return bool(val)
+    except ValueError:
+        raise ValidationError(translator(_("${val} is not bool", mapping={"val": val})))
+
+
+def parse_float(val, options):
+    try:
+        return float(val)
+    except ValueError:
+        raise ValidationError(translator(_("${val} is not float", mapping={"val": val})))
 
 
 def parse_text(val, options):
-    return text_(val)
+    try:
+        return text_(val)
+    except ValueError:
+        raise ValidationError(translator(_("${val} is not text", mapping={"val": val})))
 
 
 def positive(val, option):
-    assert val >= 0
+    if val < 0:
+        raise ValidationError(translator(_("${val} is smaller than zero", mapping={"val": val})))
     return val
 
 
@@ -368,6 +422,7 @@ def Collection(schema):
 
 Field = PartialApplicationLike(_Field, reject_None, required=True).partial
 IntegerField = Field(post=parse_int).partial
+FloatField = Field(post=parse_float).partial
 BooleanField = Field(post=parse_bool).partial
 TextField = Field(post=parse_text).partial
 
