@@ -1,30 +1,10 @@
 # -*- coding:utf-8 -*-
 import pytest
-from tinyschema import(
-    as_schema,
-    PositiveIntegerField,
-    column,
-    Container,
-    Collection,
+from .schemas import (
+    Point,
+    Pair,
+    Plot
 )
-
-
-@as_schema
-class Point(object):
-    x = column(PositiveIntegerField)
-    y = column(PositiveIntegerField)
-    z = column(PositiveIntegerField, required=False)
-
-
-@as_schema
-class Pair(object):
-    l = column(Container(Point), label="l")
-    r = column(Container(Point), label="r")
-
-
-@as_schema
-class Plot(object):
-    ps = column(Collection(Point))
 
 
 def test_point__name():
@@ -117,6 +97,7 @@ def test_pair__label():
     assert pair.l.label == "l"
     assert pair.r.label == "r"
 
+
 def test_pair__validation():
     pair = Pair(l=dict(x="10", y="20"),
                 r=dict(x="100", y="200"))
@@ -167,4 +148,3 @@ def test_plot__validation2():
 
     with pytest.raises(ErrorRaised):
         plot.validate()
-

@@ -146,8 +146,8 @@ class _Collection(object):
 
 
 class PartialApplicationLike(object):
-    def __init__(self, fn, *args, **options):
-        self.fn = fn
+    def __init__(self, func, *args, **options):
+        self.func = func
         self.args = list(args)
         self.options = options
 
@@ -159,16 +159,16 @@ class PartialApplicationLike(object):
             convertors.append(post)
         options = self.options.copy()
         options.update(options_)
-        return PartialApplicationLike(self.fn, *convertors, **options)
+        return PartialApplicationLike(self.func, *convertors, **options)
 
     def __call__(self, value, **options):
         new_options = self.options.copy()
         new_options.update(options)
-        return self.fn(value, self.args, new_options)
+        return self.func(value, self.args, new_options)
 
 
-def column(fn, *args, **kwargs):
-    v = fn(*args, **kwargs)
+def column(func, *args, **kwargs):
+    v = func(*args, **kwargs)
     v._column_counter = gensym()
     return v
 
@@ -228,8 +228,8 @@ def __init__(self, {kwargs}):
 
 
 class Validator(object):
-    def __init__(self, fn, names, schema):
-        self.fn = fn
+    def __init__(self, func, names, schema):
+        self.func = func
         self.names = names
         self.schema = schema
 
@@ -248,7 +248,7 @@ class Validator(object):
                 return data
             args.append(v)
         try:
-            self.fn(*args)
+            self.func(*args)
         except Exception as e:
             errors = defaultdict(list)
             first_name = self.names[0]
@@ -281,9 +281,9 @@ def lookup(name, names, lookup=DefaultValidatorLookup):
 
 
 def add_validator(name, lookup=DefaultValidatorLookup):
-    def wrap(fn):
-        lookup.add(name, partial(Validator, fn))
-        return fn
+    def wrap(func):
+        lookup.add(name, partial(Validator, func))
+        return func
     return wrap
 
 
@@ -428,10 +428,10 @@ def Collection(schema):
     return PartialApplicationLike(partial(_Collection, schema), required=True).partial
 
 Field = PartialApplicationLike(_Field, reject_None, required=True).partial
-IntegerField = Field(post=parse_int).partial
-FloatField = Field(post=parse_float).partial
-BooleanField = Field(post=parse_bool).partial
-TextField = Field(post=parse_text).partial
+IntegerField = Field(post=parse_int, type="integer").partial
+FloatField = Field(post=parse_float, type="number").partial
+BooleanField = Field(post=parse_bool, type="boolean").partial
+TextField = Field(post=parse_text, type="string").partial
 
 PositiveIntegerField = IntegerField(post=positive).partial
 
