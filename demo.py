@@ -14,6 +14,17 @@ assert (pt.x.name) == "x"
 assert (pt.x.label) == "横"
 
 
+@t.add_validator("equals")
+def equals(x, y):
+    if x != y:
+        raise ValueError("not equal")
+
+
+pt2 = t.lookup("equals", ["x", "y"])(pt)
+try:
+    pt2.validate()
+except t.ErrorRaised as e:
+    print(e)
 
 
 @t.as_schema
@@ -28,10 +39,8 @@ assert data == {"color": "red"}
 try:
     color1 = Signal(color="green")
     data = color1.validate()
-except t.ErrorRaised:
-    print("error")
-
-
+except t.ErrorRaised as e:
+    print(e)
 
 
 @t.as_schema
@@ -43,6 +52,8 @@ class Pair(object):
 pair = Pair(l=Point(x=10, y=200), r=Point(x=50, y=200))
 
 for f in pair:
-    print(u"<div>({x}, {y})</div>".format(x=f.x.value, y=f.y.valueq))
+    print(u"<div>({x}, {y})</div>".format(x=f.x.value, y=f.y.value))
 # <div>(10, 200)</div>
 # <div>(50, 200)</div>
+
+

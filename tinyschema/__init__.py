@@ -17,9 +17,10 @@ from .compat import (
 
 
 class ValidationError(Exception):
-    def __init__(self, name, error):
+    def __init__(self, name, error, names=None):
         self.name = name
         self.error = error
+        self.names = names or [name]
 
 
 class ErrorRaised(Exception):
@@ -111,25 +112,25 @@ class _Collection(object):
 
 
 class PartialApplicationLike(object):
-    def __init__(self, fn, *args, **kwargs):
+    def __init__(self, fn, *args, **options):
         self.fn = fn
         self.args = list(args)
-        self.kwargs = kwargs
+        self.options = options
 
-    def partial(self, pre=None, post=None, **kwargs_):
-        args = self.args[:]
+    def partial(self, pre=None, post=None, **options_):
+        convertors = self.args[:]
         if pre:
-            args.insert(0, pre)
+            convertors.insert(0, pre)
         if post:
-            args.append(post)
-        kwargs = self.kwargs.copy()
-        kwargs.update(kwargs_)
-        return PartialApplicationLike(self.fn, *args, **kwargs)
+            convertors.append(post)
+        options = self.options.copy()
+        options.update(options_)
+        return PartialApplicationLike(self.fn, *convertors, **options)
 
-    def __call__(self, value, **kwargs):
-        new_kwargs = self.kwargs.copy()
-        new_kwargs.update(kwargs)
-        return self.fn(value, self.args, new_kwargs)
+    def __call__(self, value, **options):
+        new_options = self.options.copy()
+        new_options.update(options)
+        return self.fn(value, self.args, new_options)
 
 
 def column(fn, *args, **kwargs):
@@ -187,6 +188,60 @@ def __init__(self, {kwargs}):
     exec(template.format(kwargs=kwargs, body=body))
     cls.__init__ = locals()["__init__"]
     return cls
+
+
+class Validator(object):
+    def __init__(self, fn, names, schema):
+        self.fn = fn
+        self.names = names
+        self.schema = schema
+
+    def validate(self):
+        data = self.schema.validate()
+        data = self._validate(data)
+        return data
+
+    def _validate(self, data):
+        args = []
+        for name in self.names:
+            v = data.get(name)
+            field = getattr(self.schema, name)
+            if field.required is False and (v is None or v is ""):
+                logger.info("validation: %s is skip", self.__class__)
+                return data
+            args.append(v)
+        try:
+            self.fn(*args)
+        except Exception as e:
+            errors = defaultdict(list)
+            first_name = self.names[0]
+            errors[first_name].append(ValidationError(first_name, e, self.names))
+            raise ErrorRaised(errors)
+        return data
+
+
+class ValidatorLookup(object):
+    def __init__(self):
+        self.repositories = {}
+
+    def add(self, name, validator):
+        self.repositories[name] = validator
+
+    def __call__(self, name):
+        return self.repositories[name]
+
+DefaultValidatorLookup = ValidatorLookup()
+
+
+def lookup(name, names, lookup=DefaultValidatorLookup):
+    return partial(lookup(name), names)
+
+
+def add_validator(name, lookup=DefaultValidatorLookup):
+    def wrap(fn):
+        lookup.add(name, partial(Validator, fn))
+        return fn
+    return wrap
 
 
 # validator
@@ -259,7 +314,7 @@ class OneOf(object):
         return val
 
 
-class ContainsOnly(object):
+class Subset(object):
     def __init__(self, choices):
         self.choices = choices
 
@@ -268,7 +323,7 @@ class ContainsOnly(object):
             raise ValueError(self.choices)
         return val
 
-URL_REGEX = r"""(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))""" # "emacs!
+URL_REGEX = r"""(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))"""  # "emacs!
 
 URL = Regex(URL_REGEX)
 
@@ -299,15 +354,23 @@ def positive(val, option):
 # SchemaFactory
 
 def Container(schema):
-    return PartialApplicationLike(partial(_Container, schema)).partial
+    return PartialApplicationLike(partial(_Container, schema), required=True).partial
 
 
 def Collection(schema):
-    return PartialApplicationLike(partial(_Collection, schema)).partial
+    return PartialApplicationLike(partial(_Collection, schema), required=True).partial
 
-Field = PartialApplicationLike(_Field, reject_None).partial
+Field = PartialApplicationLike(_Field, reject_None, required=True).partial
 IntegerField = Field(post=parse_int).partial
 BooleanField = Field(post=parse_bool).partial
 TextField = Field(post=parse_text).partial
 
 PositiveIntegerField = IntegerField(post=positive).partial
+
+
+# Validation
+
+@add_validator("equals")
+def equals(x, y):
+    if x != y:
+        raise ValueError("not equal")

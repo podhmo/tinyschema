@@ -53,6 +53,39 @@ def test_point__validation_failure():
         pt.validate()
 
 
+def test_point_validator__failure():
+    from tinyschema import ErrorRaised, lookup
+    pt = Point(x="10", y="20", z=None)
+    pt.validate()
+    validator = lookup("equals", ["x", "y"])
+    pt = validator(pt)
+
+    with pytest.raises(ErrorRaised):
+        pt.validate()
+
+
+def test_point_validator__success():
+    from tinyschema import lookup
+    pt = Point(x="20", y="20", z=None)
+    pt.validate()
+    validator = lookup("equals", ["x", "y"])
+    pt = validator(pt)
+
+    data = pt.validate()
+    assert data["x"] == 20
+
+
+def test_point_validator__skip():
+    from tinyschema import lookup
+    pt = Point(x="10", y="20", z=None)
+    pt.validate()
+    validator = lookup("equals", ["z", "y"])
+    pt = validator(pt)
+
+    data = pt.validate()
+    assert data["x"] == 10
+
+
 def test_pair__name():
     pair = Pair(l=Point(x="10", y="20"),
                 r=Point(x="10", y="20"))
@@ -118,7 +151,6 @@ def test_plot__validation():
     data = plot.validate()
 
     assert data["ps"][0]["x"] == 10
-
 
 
 def test_plot__validation2():
