@@ -71,7 +71,10 @@ class _Container(object):
         self.options = options
 
     def __getattr__(self, k):
-        return getattr(self.value, k)
+        try:
+            return getattr(self.value, k)
+        except AttributeError:
+            return self.options[k]
 
     def __repr__(self):
         return "<Container {!r}>".format(self.value.__class__)
@@ -91,6 +94,9 @@ class _Collection(object):
         self.schema = schema
         self.convertors = convertors
         self.options = options
+
+    def __getattr__(self, k):
+        return self.options[k]
 
     def __getitem__(self, i):
         return self.value[i]

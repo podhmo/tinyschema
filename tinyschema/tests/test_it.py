@@ -18,8 +18,8 @@ class Point(object):
 
 @as_schema
 class Pair(object):
-    l = column(Container(Point))
-    r = column(Container(Point))
+    l = column(Container(Point), label="l")
+    r = column(Container(Point), label="r")
 
 
 @as_schema
@@ -109,6 +109,13 @@ def test_pair__value2():
     assert pair.l.x.value == "10"
     assert pair.r.x.value == "100"
 
+
+def test_pair__label():
+    pair = Pair(l=dict(x="10", y="20"),
+                r=dict(x="100", y="200"))
+
+    assert pair.l.label == "l"
+    assert pair.r.label == "r"
 
 def test_pair__validation():
     pair = Pair(l=dict(x="10", y="20"),
