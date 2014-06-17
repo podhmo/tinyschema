@@ -44,7 +44,7 @@ _ = translationstring.TranslationStringFactory('tinyschema')
 
 
 class ValidationError(Exception):
-    def __init__(self, error, name=None, names=None, message=None):
+    def __init__(self, error=None, name=None, names=None, message=None):
         self.name = name
         self.error = error
         self.names = names or [name]
@@ -73,6 +73,12 @@ class _Field(object):
         except KeyError as e:
             raise AttributeError(e)
 
+    def bind(self, *new_convertors):
+        convertors = self.convertors[:]
+        convertors.extend(new_convertors)
+        return self.__class__(self.value, convertors, self.options)
+
+
     def validate(self):
         try:
             value = self.value
@@ -81,8 +87,11 @@ class _Field(object):
             return value
         except Break as e:
             return e.value
+        except ValidationError as e:
+            e.name=self.name
+            raise
         except Exception as e:
-            raise ValidationError(self.name, e)
+            raise ValidationError(e, name=self.name)
 
     def renewal(self, value):
         self.value = value
