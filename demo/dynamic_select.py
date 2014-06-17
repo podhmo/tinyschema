@@ -21,6 +21,15 @@ lookup = TemplateLookup(directories=["."])
 result = (lookup.get_template("render.mako").render(schema=signal))
 print(result)
 
+# <form action="#" method="POST">
+#   <select>
+#          <option value="red" selected="selected">red</option>
+#          <option value="blue">blue</option>
+#          <option value="yellow">yellow</option>
+#   </select>
+# </form>
+
+
 
 # validation
 
