@@ -11,7 +11,7 @@ class Signal(object):
 # runtime
 signal = Signal(color="red")
 signal.color = signal.color.bind(t.OneOf(["red", "blue", "yellow"]))
-signal.color.choices = [("red", "red"), ("blue", "blue"), ("yellow", "yellow")];
+signal.color.choices = [("red", "red"), ("blue", "blue"), ("yellow", "yellow")]
 
 # generate html
 
@@ -30,12 +30,11 @@ print(result)
 # </form>
 
 
-
 # validation
 
 signal = Signal(color="black")
 signal.color = signal.color.bind(t.OneOf(["red", "blue", "yellow"]))
-signal.color.choices = [("red", "red"), ("blue", "blue"), ("yellow", "yellow")];
+signal.color.choices = [("red", "red"), ("blue", "blue"), ("yellow", "yellow")]
 
 try:
     print(signal.validate())
@@ -46,7 +45,7 @@ except t.ErrorRaised as e:
 
 signal = Signal(color="blue")
 signal.color = signal.color.bind(t.OneOf(["red", "blue", "yellow"]))
-signal.color.choices = [("red", "red"), ("blue", "blue"), ("yellow", "yellow")];
+signal.color.choices = [("red", "red"), ("blue", "blue"), ("yellow", "yellow")]
 
 
-print(signal.validate()) # => OrderedDict([('color', 'blue')])
+print(signal.validate())  # => OrderedDict([('color', 'blue')])

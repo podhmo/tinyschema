@@ -55,6 +55,9 @@ class ErrorRaised(Exception):
     def __init__(self, errors):
         self.errors = errors
 
+    def __str__(self):
+        return "<ErrorRaised errors={!r}>".format(self.errors)
+
 
 class Break(Exception):
     def __init__(self, value):
@@ -78,7 +81,6 @@ class _Field(object):
         convertors.extend(new_convertors)
         return self.__class__(self.value, convertors, self.options)
 
-
     def validate(self):
         try:
             value = self.value
@@ -88,7 +90,7 @@ class _Field(object):
         except Break as e:
             return e.value
         except ValidationError as e:
-            e.name=self.name
+            e.name = self.name
             raise
         except Exception as e:
             raise ValidationError(e, name=self.name)
@@ -184,9 +186,14 @@ def column(func, *args, **kwargs):
 
 def as_schema(cls):
     xs = []
-    for name, attr in cls.__dict__.items():
-        if hasattr(attr, "_column_counter"):
-            xs.append((attr._column_counter, name))
+    s = set()
+    for c in cls.__mro__:
+        for name, attr in c.__dict__.items():
+            if hasattr(attr, "_column_counter"):
+                if name not in s:
+                    xs.append((attr._column_counter, name))
+                    s.add(name)
+
     cls.fieldnames = [name for (_, name) in sorted(xs, key=lambda xs: xs[0])]
 
     # iter
@@ -389,8 +396,16 @@ URL = Regex(URL_REGEX)
 
 def reject_None(val, options):
     if options.get("required", True):
+        if val is None:
+            raise ValidationError(None, message=(get_translator())(_("required")))
+        else:
+            return val
+    elif val is not None:
         return val
-    raise Break(None)
+    elif "default" in options:
+        raise Break(options["default"])
+    else:
+        raise Break(None)
 
 
 def parse_int(val, options):
@@ -421,6 +436,13 @@ def parse_text(val, options):
         raise ValidationError(e, message=(get_translator())(_("${val} is not text", mapping={"val": val})))
 
 
+def parse_choices(val, options):
+    try:
+        return [(x, y) for x, y in val]
+    except Exception as e:
+        raise ValidationError(e, message=(get_translator())(_("${val} is not valid choices", mapping={"val": val})))
+
+
 def positive(val, option):
     if val < 0:
         raise ValidationError(None, message=(get_translator())(_("${val} is smaller than zero", mapping={"val": val})))
@@ -441,7 +463,7 @@ IntegerField = Field(post=parse_int, type="integer").partial
 FloatField = Field(post=parse_float, type="number").partial
 BooleanField = Field(post=parse_bool, type="boolean").partial
 TextField = Field(post=parse_text, type="string").partial
-
+ChoicesField = Field(post=parse_choices, type="choices").partial
 PositiveIntegerField = IntegerField(post=positive).partial
 
 
