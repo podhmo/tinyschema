@@ -118,3 +118,21 @@ except t.ErrorRaised as e:
     import json
     print("error: {}".format(json.dumps(e.errors, ensure_ascii=False)))
 
+
+from tinyschema.datavalidation import container
+
+
+class PairValidation(ValidationObject):
+    @container("l")
+    class sub:
+        @share(single("x"), single("y"))
+        def positive(self, v):
+            if v < 0:
+                raise Invalid("not positive")
+
+params = {
+    "l": {"x": "10", "y": "-20", "foo": "foo"},
+    "r": {"x": "100", "y": "20"},
+}
+
+PairValidation()(Pair.fromdict(params))
