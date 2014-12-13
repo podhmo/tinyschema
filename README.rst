@@ -81,7 +81,7 @@ converted value is None.
 when schema error is found.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-when schema validation is failure, then, raise ErrorRaised exception.
+when schema validation is failure, then, ErrorRaised exception is raised.
 
 .. code:: python
 
