@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
 import logging
 logger = logging.getLogger(__name__)
-import tinyschema as t
 
 
 def iterate_params(params):
@@ -49,25 +48,25 @@ class MapperFamily(object):
         return self.aggregate(root_name, result)
 
 
-# sample
+# # sample
 
-@t.as_schema
-class FieldParams(object):
-    description = t.column(t.TextField)
-    choices = t.column(t.Field)  # xxx
-    widget = t.column(t.TextField, post=t.OneOf(["select", "checkbox", "radio", "multiselect"]))
-    required = t.column(t.BooleanField, default=False, required=False)
-
-
-def create_field(name, schema, validated):
-    return t.column(t.Field,
-                    post=t.OneOf([x[0] for x in validated["choices"]]),
-                    name=name,
-                    label=validated["description"],
-                    choices=validated["choices"],
-                    widget=validated["widget"],
-                    required=validated["required"])
+# @t.as_schema
+# class FieldParams(object):
+#     description = t.column(t.TextField)
+#     choices = t.column(t.Field)  # xxx
+#     widget = t.column(t.TextField, post=t.OneOf(["select", "checkbox", "radio", "multiselect"]))
+#     required = t.column(t.BooleanField, default=False, required=False)
 
 
-def create_schema(name, attrs):
-    return t.as_schema(type(name, (object, ), attrs))
+# def create_field(name, schema, validated):
+#     return t.column(t.Field,
+#                     post=t.OneOf([x[0] for x in validated["choices"]]),
+#                     name=name,
+#                     label=validated["description"],
+#                     choices=validated["choices"],
+#                     widget=validated["widget"],
+#                     required=validated["required"])
+
+
+# def create_schema(name, attrs):
+#     return t.as_schema(type(name, (object, ), attrs))

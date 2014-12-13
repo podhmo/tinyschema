@@ -1,9 +1,9 @@
 # -*- coding:utf-8 -*-
 import tinyschema as t
+from tinyschema.datavalidation import ValidationObject, multi, Invalid
 
 
-@t.as_schema
-class Point(object):
+class Point(t.Schema):
     x = t.column(t.IntegerField, label=u"横")
     y = t.column(t.IntegerField)
     z = t.column(t.IntegerField, required=False)
@@ -14,21 +14,21 @@ assert (pt.x.name) == "x"
 assert (pt.x.label) == "横"
 
 
-@t.add_validator("equals")
-def equals(x, y):
-    if x != y:
-        raise ValueError("not equal")
+class PointValidation(ValidationObject):
+    @multi(["x", "y"])
+    def equals(self, x, y):
+        if x != y:
+            raise Invalid("not equal")
 
 
-pt2 = t.lookup("equals", ["x", "y"])(pt)
+pt2 = PointValidation()
 try:
-    pt2.validate()
+    pt2.validate(pt)
 except t.ErrorRaised as e:
     print(e)
 
 
-@t.as_schema
-class Signal(object):
+class Signal(t.Schema):
     color = t.column(t.TextField, t.OneOf(["red", "blue", "yellow"]))
 
 
@@ -43,8 +43,7 @@ except t.ErrorRaised as e:
     print(e)
 
 
-@t.as_schema
-class Pair(object):
+class Pair(t.Schema):
     l = t.column(t.Container(Point), class_="left")
     r = t.column(t.Container(Point), class_="right")
 

@@ -33,6 +33,7 @@ def test_point__validation_failure():
         pt.validate()
 
 
+@pytest.skip("1")
 def test_point_validator__failure():
     from tinyschema import ErrorRaised, lookup
     pt = Point(x="10", y="20", z=None)
@@ -44,6 +45,7 @@ def test_point_validator__failure():
         pt.validate()
 
 
+@pytest.skip("2")
 def test_point_validator__success():
     from tinyschema import lookup
     pt = Point(x="20", y="20", z=None)
@@ -55,6 +57,7 @@ def test_point_validator__success():
     assert data["x"] == 20
 
 
+@pytest.skip("3")
 def test_point_validator__skip():
     from tinyschema import lookup
     pt = Point(x="10", y="20", z=None)

@@ -17,6 +17,7 @@ def subschema_of(field):
     # PartialApplicationLike(partial(_Container, schema), required=True).partial
     return field.func.args[0]
 
+
 def original_of(fn):
     if hasattr(fn, "func"):
         return original_of(fn.func)

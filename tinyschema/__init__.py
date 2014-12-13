@@ -10,9 +10,7 @@ from collections import (
 from .langhelpers import gensym
 from .compat import (
     text_,
-    text_type,
     string_types,
-    xrange,
     FileNotFoundError
 )
 import gettext
@@ -20,6 +18,7 @@ import translationstring
 import os.path
 here = os.path.abspath(os.path.dirname(__file__))
 translation = None
+
 
 def create_translator(languages=None):
     try:
@@ -104,7 +103,7 @@ class _Container(object):
         if isinstance(value, schema):
             self.value = value
         else:
-            self.value = schema(**value)
+            self.value = schema.fromdict(value)
         self.schema = schema
         self.convertors = convertors
         self.options = options
@@ -129,7 +128,7 @@ class _Collection(object):
             if isinstance(v, schema):
                 self.value.append(v)
             else:
-                self.value.append(schema(**v))
+                self.value.append(schema.fromdict(v))
         self.schema = schema
         self.convertors = convertors
         self.options = options
@@ -203,6 +202,18 @@ def as_schema(cls):
                 yield getattr(self, name)
         cls.__iter__ = __iter__
 
+    if not hasattr(cls, "fromdict"):
+        @classmethod
+        def fromdict(cls, params):
+            kwargs = {}
+            for name in cls.fieldnames:
+                if name in params:
+                    kwargs[name] = params.pop(name)
+            ob = cls(**kwargs)
+            ob._kwargs = kwargs
+            return ob
+        cls.fromdict = fromdict
+
     # validate
     if not hasattr(cls, "_validate"):
         def _validate(self):
@@ -243,67 +254,15 @@ def __init__(self, {kwargs}):
     return cls
 
 
-class Validator(object):
-    def __init__(self, func, names, schema):
-        self.func = func
-        self.names = names
-        self.schema = schema
+class SchemaMeta(type):
+    def __new__(self, name, bases, attrs):
+        cls = super(SchemaMeta, self).__new__(self, name, bases, attrs)
+        return as_schema(cls)
 
-    def validate(self):
-        data = self.schema.validate()
-        data = self._validate(data)
-        return data
-
-    def _validate(self, data):
-        args = []
-        for name in self.names:
-            v = data.get(name)
-            field = getattr(self.schema, name)
-            if field.required is False and (v is None or v is ""):
-                logger.info("validation: %s is skip", self.__class__)
-                return data
-            args.append(v)
-        try:
-            self.func(*args)
-        except Exception as e:
-            errors = defaultdict(list)
-            first_name = self.names[0]
-            if isinstance(e, ValidationError):
-                if e.message:
-                    errors[first_name].append(e.message)
-                else:
-                    errors[first_name].append(e)
-            else:
-                errors[first_name].append(ValidationError(e, name=first_name, names=self.names))
-            raise ErrorRaised(errors)
-        return data
+Schema = SchemaMeta("Schema", (object, ), {})
 
 
-class ValidatorLookup(object):
-    def __init__(self):
-        self.repositories = {}
-
-    def add(self, name, validator):
-        self.repositories[name] = validator
-
-    def __call__(self, name):
-        return self.repositories[name]
-
-DefaultValidatorLookup = ValidatorLookup()
-
-
-def lookup(name, names, lookup=DefaultValidatorLookup):
-    return partial(lookup(name), names)
-
-
-def add_validator(name, lookup=DefaultValidatorLookup):
-    def wrap(func):
-        lookup.add(name, partial(Validator, func))
-        return func
-    return wrap
-
-
-# validation
+# field validation
 class Any(object):
     def __init__(self, validators):
         self.validators = validators
@@ -452,11 +411,11 @@ def positive(val, option):
 
 
 def Container(schema):
-    return PartialApplicationLike(partial(_Container, schema), required=True).partial
+    return PartialApplicationLike(partial(_Container, schema), required=True, container=True).partial
 
 
 def Collection(schema):
-    return PartialApplicationLike(partial(_Collection, schema), required=True).partial
+    return PartialApplicationLike(partial(_Collection, schema), required=True, container=True).partial
 
 Field = PartialApplicationLike(_Field, reject_None, required=True).partial
 IntegerField = Field(post=parse_int, type="integer").partial
@@ -465,12 +424,3 @@ BooleanField = Field(post=parse_bool, type="boolean").partial
 TextField = Field(post=parse_text, type="string").partial
 ChoicesField = Field(post=parse_choices, type="choices").partial
 PositiveIntegerField = IntegerField(post=positive).partial
-
-
-# Validation
-
-@add_validator("equals")
-def equals(x, y):
-    if x != y:
-        raise ValueError("not equal")
-
