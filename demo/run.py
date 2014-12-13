@@ -93,7 +93,28 @@ class PointValidation(ValidationObject):
 validate = PointValidation(limit=100)
 print(validate(Point(x=10, y=20)))  # => OrderedDict([('x', 10), ('y', 20), ('z', None)])
 print(validate(Point(x=10, y=20, z=10)))  # => OrderedDict([('x', 10), ('y', 20), ('z', 10)])
-print(validate(Point(x=10, y=20, z=1000)))
+# print(validate(Point(x=10, y=20, z=1000)))
 # tinyschema.ErrorRaised: <ErrorRaised errors=defaultdict(<class 'list'>, {'z': ['too large'], 'x': ['not equal']})>
-print(validate(Point(x="aa")))
+# print(validate(Point(x="aa")))
 # tinyschema.ErrorRaised: <ErrorRaised errors=defaultdict(<class 'list'>, {'x': ['aa is not int'], 'y': ['required']})>
+
+from tinyschema.datavalidation import collection
+
+
+class PointListValidation(ValidationObject):
+    @collection("points")
+    class sub:
+        @share(single("x"), single("y"))
+        def positive(self, v):
+            if v < 0:
+                raise Invalid("oops")
+params = {
+    "points": [{"x": "10", "y": "20"}, {"x": "20", "y": "-20"}, {"x": "30", "y": "20"}, ]
+}
+
+try:
+    PointListValidation()(PointList.fromdict(params))
+except t.ErrorRaised as e:
+    import json
+    print("error: {}".format(json.dumps(e.errors, ensure_ascii=False)))
+

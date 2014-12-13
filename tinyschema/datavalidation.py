@@ -62,6 +62,35 @@ class Convert(object):
                 return self.method(parent, params)
 
 
+class Collection(object):
+    def __init__(self, name, cls):
+        self.names = [name]  # for common interface
+        self.name = name
+        self.validators = [v for v in cls.__dict__.values() if is_validator(v)]
+        self.validators.sort(key=lambda o: o._v_count)
+        self._v_count = counter()
+        self.msg = None
+
+        self.index = None
+        self.child = None
+
+    def __call__(self, parent, params):
+        if self.name in params:
+            targets = params[self.name]
+            for i, target in enumerate(targets):
+                for v in self.validators:
+                    self.index = i
+                    self.child = v
+                    v(parent, target)
+
+    @property
+    def position(self):
+        r = [self.name]
+        if self.child:
+            r.append(self.index)
+            r.append(getattr(self.child, "position") or self.child.names[0])
+        return r
+
 def single(name, msg=None):
     return partial(Multi, [name], msg=msg)
 
@@ -78,6 +107,10 @@ def convert(names=None, msg=None):
 def matched(names, msg=None):
     assert isinstance(names, (list, tuple))
     return partial(Matched, names, msg=msg)
+
+
+def collection(name):
+    return partial(Collection, name)
 
 
 def share(*factories):
@@ -157,7 +190,23 @@ class _ValidationObject(object):
             msg = validation.msg(**params)
         else:
             msg = validation.msg
-        errors[position].append(msg)
+
+        if not isinstance(position, (list, tuple)):
+            errors[position].append(msg)
+        else:
+            target = errors
+            for i, k in enumerate(position[:-1]):
+                if k not in target:
+                    if isinstance(position[i + 1], int):
+                        target[k] = [defaultdict(list) for i in range(position[i + 1] + 1)]
+                    else:
+                        target[k] = defaultdict(list)
+                try:
+                    target = target[k]
+                except IndexError:
+                    for i in range(k + 1):
+                        target[i] = defaultdict(list)
+            target[position[-1]].append(msg)
 
     def on_success(self, _, params):
         return params
