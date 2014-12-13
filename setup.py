@@ -40,7 +40,7 @@ class PyTest(TestCommand):
 
 
 setup(name='tinyschema',
-      version='0.1',
+      version='0.2',
       description='tiny schema implementation',
       long_description=README + '\n\n' +  CHANGES,
       classifiers=[

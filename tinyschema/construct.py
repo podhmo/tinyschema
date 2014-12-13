@@ -67,6 +67,8 @@ class MapperFamily(object):
 #                     widget=validated["widget"],
 #                     required=validated["required"])
 
+import tinyschema as t
 
-# def create_schema(name, attrs):
-#     return t.as_schema(type(name, (object, ), attrs))
+
+def create_schema(name, attrs):
+    return t.as_schema(type(name, (object, ), attrs))
