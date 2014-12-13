@@ -83,6 +83,14 @@ when schema error is found.
 
 when schema validation is failure, then, raise ErrorRaised exception.
 
+.. code:: python
+
+    params = {"x": "aa"}
+    pt = Point.fromdict(params)
+    pt.validate()
+    # tinyschema.ErrorRaised: <ErrorRaised errors=defaultdict(<class 'list'>, {'y': ['required'], 'x': ['aa is not int']})>
+
+
 Adding field validation
 ----------------------------------------
 
