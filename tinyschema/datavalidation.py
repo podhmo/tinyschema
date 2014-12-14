@@ -139,6 +139,7 @@ def matched(names, msg=None):
 def collection(name):
     return partial(Collection, name)
 
+
 def container(name):
     return partial(Container, name)
 

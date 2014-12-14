@@ -13,10 +13,12 @@ def teardown_module(m):
 
 
 def test_positive():
-    from tinyschema import positive, ValidationError
+    from tinyschema import Failure, Schema, column, PositiveIntegerField
     import pytest
 
-    with pytest.raises(ValidationError) as e:
-        positive(-10, {})
+    class S(Schema):
+        value = column(PositiveIntegerField)
 
-    assert "小さいです" in e.value.message
+    with pytest.raises(Failure) as e:
+        S(value=-10).validate()
+    assert "小さいです" in e.value.errors["value"][0]

@@ -228,7 +228,10 @@ def as_schema(cls):
                     current.renewal(validated)
                 except ValidationError as e:
                     if e.message is not None:
-                        errors[e.name].append(e.message)
+                        if isinstance(e.message, translationstring.TranslationString):
+                            errors[e.name].append(get_translator()(e.message))
+                        else:
+                            errors[e.name].append(e.message)
                     else:
                         errors[e.name].append(e.error)
             if errors:
@@ -274,7 +277,7 @@ class Any(object):
                 val = v(val, options)
                 return val
             except Exception:
-                errors.append((get_translator())(_("${val} is not validation suceeed.", mapping={"val": val})))
+                errors.append((_("${val} is not validation suceeed.", mapping={"val": val})))
         e = errors[0]
         raise ValidationError(error=e, message=e.message)
 
@@ -292,11 +295,11 @@ class Regex(object):
             if self.msg:
                 msg = self.msg(val)
             msg = _("invalid email ${val}", mapping={"val": val})
-            raise ValidationError(message=(get_translator())(msg))
+            raise ValidationError(message=(msg))
         return val
 
 EMAIL_RE = "(?i)^[A-Z0-9._%!#$%&'*+-/=?^_`{|}~()]+@[A-Z0-9]+([.-][A-Z0-9]+)*\.[A-Z]{2,22}$"
-EMail = partial(Regex, EMAIL_RE, lambda val: (get_translator())(_("${val} is not url", mapping={"val": val})))
+EMail = partial(Regex, EMAIL_RE, lambda val: (_("${val} is not url", mapping={"val": val})))
 
 
 class Range(object):
@@ -306,9 +309,9 @@ class Range(object):
 
     def __call__(self, val, options):
         if self.min > self.val:
-            raise ValidationError(message=(get_translator())(_("${val} is smaller than ${min}", mapping={"val": val, "min": self.min})))
+            raise ValidationError(message=(_("${val} is smaller than ${min}", mapping={"val": val, "min": self.min})))
         if self.max < self.val:
-            raise ValidationError(message=(get_translator())(_("${val} is bigger than ${max}", mapping={"val": val, "max": self.max})))
+            raise ValidationError(message=(_("${val} is bigger than ${max}", mapping={"val": val, "max": self.max})))
         return val
 
 
@@ -319,9 +322,9 @@ class Length(object):
 
     def __call__(self, val, options):
         if min and min > self.val:
-            raise ValidationError(message=(get_translator())(_("${val} is shorter than ${min}", mapping={"val": val, "min": self.min})))
+            raise ValidationError(message=(_("${val} is shorter than ${min}", mapping={"val": val, "min": self.min})))
         if max and max < self.val:
-            raise ValidationError(message=(get_translator())(_("${val} is longer than ${max}", mapping={"val": val, "max": self.max})))
+            raise ValidationError(message=(_("${val} is longer than ${max}", mapping={"val": val, "max": self.max})))
         return val
 
 
@@ -332,7 +335,7 @@ class OneOf(object):
     def __call__(self, val, options):
         if val not in self.choices:
             candidates = u', '.join([text_(x) for x in self.choices])
-            raise ValidationError(message=(get_translator())(_("${val} is not in ${candidates}", mapping={"val": val, "candidates": candidates})))
+            raise ValidationError(message=(_("${val} is not in ${candidates}", mapping={"val": val, "candidates": candidates})))
             raise ValueError(self.choices)
         return val
 
@@ -345,7 +348,7 @@ class Subset(object):
         if not set(val).issubset(self.choices):
             sval = u', '.join([text_(x) for x in val])
             candidates = u', '.join([text_(x) for x in self.choices])
-            raise ValidationError(message=(get_translator())(_("${val} is not subset of  ${candidates}", mapping={"val": sval, "candidates": candidates})))
+            raise ValidationError(message=(_("${val} is not subset of  ${candidates}", mapping={"val": sval, "candidates": candidates})))
         return val
 
 URL_REGEX = r"""(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))"""  # "emacs!
@@ -356,7 +359,7 @@ URL = Regex(URL_REGEX)
 def reject_None(val, options):
     if options.get("required", True):
         if val is None:
-            raise ValidationError(None, message=(get_translator())(_("required")))
+            raise ValidationError(None, message=(_("required")))
         else:
             return val
     elif val is not None:
@@ -371,40 +374,40 @@ def parse_int(val, options):
     try:
         return int(val)
     except ValueError as e:
-        raise ValidationError(e, message=(get_translator())(_("${val} is not int", mapping={"val": val})))
+        raise ValidationError(e, message=(_("${val} is not int", mapping={"val": val})))
 
 
 def parse_bool(val, options):
     try:
         return bool(val)
     except ValueError as e:
-        raise ValidationError(e, message=(get_translator())(_("${val} is not bool", mapping={"val": val})))
+        raise ValidationError(e, message=(_("${val} is not bool", mapping={"val": val})))
 
 
 def parse_float(val, options):
     try:
         return float(val)
     except ValueError as e:
-        raise ValidationError(e, message=(get_translator())(_("${val} is not float", mapping={"val": val})))
+        raise ValidationError(e, message=(_("${val} is not float", mapping={"val": val})))
 
 
 def parse_text(val, options):
     try:
         return text_(val)
     except ValueError as e:
-        raise ValidationError(e, message=(get_translator())(_("${val} is not text", mapping={"val": val})))
+        raise ValidationError(e, message=(_("${val} is not text", mapping={"val": val})))
 
 
 def parse_choices(val, options):
     try:
         return [(x, y) for x, y in val]
     except Exception as e:
-        raise ValidationError(e, message=(get_translator())(_("${val} is not valid choices", mapping={"val": val})))
+        raise ValidationError(e, message=(_("${val} is not valid choices", mapping={"val": val})))
 
 
 def positive(val, option):
     if val < 0:
-        raise ValidationError(None, message=(get_translator())(_("${val} is smaller than zero", mapping={"val": val})))
+        raise ValidationError(None, message=(_("${val} is smaller than zero", mapping={"val": val})))
     return val
 
 # SchemaFactory
