@@ -75,10 +75,12 @@ class _Field(object):
         except KeyError as e:
             raise AttributeError(e)
 
-    def bind(self, *new_convertors):
+    def bind(self, *new_convertors, **options):
         convertors = self.convertors[:]
         convertors.extend(new_convertors)
-        return self.__class__(self.value, convertors, self.options)
+        new_options = self.options.copy()
+        new_options.update(options)
+        return self.__class__(self.value, convertors, new_options)
 
     def validate(self):
         try:
@@ -161,7 +163,7 @@ class PartialApplicationLike(object):
         self.args = list(args)
         self.options = options
 
-    def partial(self, pre=None, post=None, **options_):
+    def partial(self, post=None, pre=None, **options_):
         convertors = self.args[:]
         if pre:
             convertors.insert(0, pre)
@@ -420,7 +422,7 @@ def Container(schema):
 def Collection(schema):
     return PartialApplicationLike(partial(_Collection, schema), required=True, container=True).partial
 
-Field = PartialApplicationLike(_Field, reject_None, required=True).partial
+Field = PartialApplicationLike(_Field, pre=reject_None, required=True).partial
 IntegerField = Field(post=parse_int, type="integer").partial
 FloatField = Field(post=parse_float, type="number").partial
 BooleanField = Field(post=parse_bool, type="boolean").partial
