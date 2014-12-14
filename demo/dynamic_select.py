@@ -38,7 +38,7 @@ signal.color.choices = [("red", "red"), ("blue", "blue"), ("yellow", "yellow")]
 
 try:
     print(signal.validate())
-except t.ErrorRaised as e:
+except t.Failure as e:
     print(e.errors["color"])
     # ['black is not in red, blue, yellow']
 

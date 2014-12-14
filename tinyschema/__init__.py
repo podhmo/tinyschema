@@ -50,12 +50,12 @@ class ValidationError(Exception):
         self.message = message
 
 
-class ErrorRaised(Exception):
+class Failure(Exception):
     def __init__(self, errors):
         self.errors = errors
 
     def __str__(self):
-        return "<ErrorRaised errors={!r}>".format(self.errors)
+        return "<Failure errors={!r}>".format(self.errors)
 
 
 class Break(Exception):
@@ -232,7 +232,7 @@ def as_schema(cls):
                     else:
                         errors[e.name].append(e.error)
             if errors:
-                raise ErrorRaised(errors=errors)
+                raise Failure(errors=errors)
             return values
         cls._validate = _validate
 

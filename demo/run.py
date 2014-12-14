@@ -22,7 +22,7 @@ pt = Point.fromdict(params)
 params = {"x": "aa"}
 pt = Point.fromdict(params)
 # pt.validate()
-# tinyschema.ErrorRaised: <ErrorRaised errors=defaultdict(<class 'list'>, {'y': ['required'], 'x': ['aa is not int']})>
+# tinyschema.Failure: <Failure errors=defaultdict(<class 'list'>, {'y': ['required'], 'x': ['aa is not int']})>
 
 
 class Signal(t.Schema):
@@ -37,9 +37,9 @@ print(data["color"])  # => "red"
 try:
     signal2 = Signal(color="green")
     data = signal2.validate()
-except t.ErrorRaised as e:
+except t.Failure as e:
     print(e)
-   # <ErrorRaised errors=defaultdict(<class 'list'>, {'color': ['green is not in red, blue, yellow']})>
+   # <Failure errors=defaultdict(<class 'list'>, {'color': ['green is not in red, blue, yellow']})>
 
 class Pair(t.Schema):
     l = t.column(t.Container(Point), class_="left")
@@ -94,9 +94,9 @@ validate = PointValidation(limit=100)
 print(validate(Point(x=10, y=20)))  # => OrderedDict([('x', 10), ('y', 20), ('z', None)])
 print(validate(Point(x=10, y=20, z=10)))  # => OrderedDict([('x', 10), ('y', 20), ('z', 10)])
 # print(validate(Point(x=10, y=20, z=1000)))
-# tinyschema.ErrorRaised: <ErrorRaised errors=defaultdict(<class 'list'>, {'z': ['too large'], 'x': ['not equal']})>
+# tinyschema.Failure: <Failure errors=defaultdict(<class 'list'>, {'z': ['too large'], 'x': ['not equal']})>
 # print(validate(Point(x="aa")))
-# tinyschema.ErrorRaised: <ErrorRaised errors=defaultdict(<class 'list'>, {'x': ['aa is not int'], 'y': ['required']})>
+# tinyschema.Failure: <Failure errors=defaultdict(<class 'list'>, {'x': ['aa is not int'], 'y': ['required']})>
 
 from tinyschema.datavalidation import collection
 
@@ -114,7 +114,7 @@ params = {
 
 try:
     PointListValidation()(PointList.fromdict(params))
-except t.ErrorRaised as e:
+except t.Failure as e:
     import json
     print("error: {}".format(json.dumps(e.errors, ensure_ascii=False)))
 

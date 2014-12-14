@@ -81,14 +81,14 @@ converted value is None.
 when schema error is found.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-when schema validation is failure, then, ErrorRaised exception is raised.
+when schema validation is failure, then, Failure exception is raised.
 
 .. code:: python
 
     params = {"x": "aa"}
     pt = Point.fromdict(params)
     pt.validate()
-    # tinyschema.ErrorRaised: <ErrorRaised errors=defaultdict(<class 'list'>, {'y': ['required'], 'x': ['aa is not int']})>
+    # tinyschema.Failure: <Failure errors=defaultdict(<class 'list'>, {'y': ['required'], 'x': ['aa is not int']})>
 
 
 Adding field validation
@@ -110,9 +110,9 @@ Adding field validation example is here.(using oneOf validator)
     try:
         signal2 = Signal(color="green")
         data = signal2.validate()
-    except t.ErrorRaised as e:
+    except t.Failure as e:
         print(e)
-       # <ErrorRaised errors=defaultdict(<class 'list'>, {'color': ['green is not in red, blue, yellow']})>
+       # <Failure errors=defaultdict(<class 'list'>, {'color': ['green is not in red, blue, yellow']})>
 
 default validator are below.
 
@@ -213,7 +213,7 @@ data-validation is a checking about a relation of each data.
     print(validate(Point(x=10, y=20, z=10)))  # => OrderedDict([('x', 10), ('y', 20), ('z', 10)])
 
     print(validate(Point(x=10, y=20, z=1000)))
-    # tinyschema.ErrorRaised: <ErrorRaised errors=defaultdict(<class 'list'>, {'z': ['too large'], 'x': ['not equal']})>
+    # tinyschema.Failure: <Failure errors=defaultdict(<class 'list'>, {'z': ['too large'], 'x': ['not equal']})>
 
     print(validate(Point(x="aa")))
-    # tinyschema.ErrorRaised: <ErrorRaised errors=defaultdict(<class 'list'>, {'x': ['aa is not int'], 'y': ['required']})>
+    # tinyschema.Failure: <Failure errors=defaultdict(<class 'list'>, {'x': ['aa is not int'], 'y': ['required']})>

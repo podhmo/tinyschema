@@ -113,13 +113,13 @@ print(SchemaRenderer("form.mako", directories=[here]).render_schema(S()))
 try:
     # foo is required
     print(S().validate())
-except t.ErrorRaised:
+except t.Failure:
     print("hmm")
 
 try:
     # 10 is not included in [0, 1, 2]
     print(S(foo="10").validate())
-except t.ErrorRaised as e:
+except t.Failure as e:
     print("hmm")
 
 print(S(foo="0").validate())

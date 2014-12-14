@@ -25,23 +25,23 @@ def test_point__validation():
 
 
 def test_point__validation_failure():
-    from tinyschema import ErrorRaised
+    from tinyschema import Failure
     pt = Point(x="10", y="20", z=None)
     pt.z.options["required"] = True
 
-    with pytest.raises(ErrorRaised):
+    with pytest.raises(Failure):
         pt.validate()
 
 
 @pytest.skip("1")
 def test_point_validator__failure():
-    from tinyschema import ErrorRaised, lookup
+    from tinyschema import Failure, lookup
     pt = Point(x="10", y="20", z=None)
     pt.validate()
     validator = lookup("equals", ["x", "y"])
     pt = validator(pt)
 
-    with pytest.raises(ErrorRaised):
+    with pytest.raises(Failure):
         pt.validate()
 
 
@@ -113,12 +113,12 @@ def test_pair__validation():
 
 
 def test_pair__validation_failure():
-    from tinyschema import ErrorRaised
+    from tinyschema import Failure
     pair = Pair(l=dict(x="10", y="20"),
                 r=dict(x="100", y="200"))
     pair.l.z.options["required"] = True
 
-    with pytest.raises(ErrorRaised):
+    with pytest.raises(Failure):
         pair.validate()
 
 
@@ -145,9 +145,9 @@ def test_plot__validation():
 
 
 def test_plot__validation2():
-    from tinyschema import ErrorRaised
+    from tinyschema import Failure
     plot = Plot(ps=[Point(**{"x": "10", "y": "20"})])
     plot.ps[0].z.options["required"] = True
 
-    with pytest.raises(ErrorRaised):
+    with pytest.raises(Failure):
         plot.validate()

@@ -24,7 +24,7 @@ class PointValidation(ValidationObject):
 pt2 = PointValidation()
 try:
     pt2.validate(pt)
-except t.ErrorRaised as e:
+except t.Failure as e:
     print(e)
 
 
@@ -39,7 +39,7 @@ assert data == {"color": "red"}
 try:
     color1 = Signal(color="green")
     data = color1.validate()
-except t.ErrorRaised as e:
+except t.Failure as e:
     print(e)
 
 

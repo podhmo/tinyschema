@@ -4,7 +4,7 @@ logger = logging.getLogger(__name__)
 import sys
 from functools import partial
 from collections import defaultdict
-from . import ErrorRaised
+from . import Failure
 
 
 def is_validator(v):
@@ -206,7 +206,7 @@ class _ValidationObject(object):
     def configure(self, schema):
         try:
             return schema.validate(), defaultdict(list)
-        except ErrorRaised as e:
+        except Failure as e:
             return {}, e.errors
 
     def catch_error(self, params, errors, validation, e):
@@ -242,6 +242,6 @@ class _ValidationObject(object):
         return params
 
     def on_failure(self, _, params, errors):
-        raise ErrorRaised(errors)
+        raise Failure(errors)
 
 ValidationObject = ValidationObjectMeta("ValidationObject", (_ValidationObject, ), {"Exception": Invalid, "Interrupt": Interrupt})
