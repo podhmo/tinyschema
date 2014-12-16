@@ -14,6 +14,12 @@ def _makeOne(*args, **kwargs):
     return S(*args, **kwargs)
 
 
+def test_any_field_required_None__is_first_converter():
+    from tinyschema import reject_None
+    s = _makeOne(x="yyy")
+    assert s.x.convertors[0] == reject_None
+
+
 def test_option_access_after_initialized():
     s = _makeOne(x="yyy")
     assert s.x.x == "yyy"

@@ -33,39 +33,43 @@ def test_point__validation_failure():
         pt.validate()
 
 
-@pytest.skip("1")
 def test_point_validator__failure():
-    from tinyschema import Failure, lookup
-    pt = Point(x="10", y="20", z=None)
-    pt.validate()
-    validator = lookup("equals", ["x", "y"])
-    pt = validator(pt)
+    from tinyschema import Failure
+    from tinyschema.datavalidation import multi, ValidationObject, Invalid
 
+    class EqualValidation(ValidationObject):
+        @multi(["x", "y"])
+        def equals(self, x, y):
+            if x != y:
+                raise Invalid("oops")
+    pt = Point(x="10", y="20", z=None)
     with pytest.raises(Failure):
-        pt.validate()
+        EqualValidation()(pt)
 
 
-@pytest.skip("2")
 def test_point_validator__success():
-    from tinyschema import lookup
-    pt = Point(x="20", y="20", z=None)
-    pt.validate()
-    validator = lookup("equals", ["x", "y"])
-    pt = validator(pt)
+    from tinyschema.datavalidation import multi, ValidationObject, Invalid
 
-    data = pt.validate()
-    assert data["x"] == 20
+    class EqualValidation(ValidationObject):
+        @multi(["x", "y"])
+        def equals(self, x, y):
+            if x != y:
+                raise Invalid("oops")
+    pt = Point(x="10", y="10", z=None)
+    data = EqualValidation()(pt)
+    assert data["x"] == 10
 
 
-@pytest.skip("3")
 def test_point_validator__skip():
-    from tinyschema import lookup
-    pt = Point(x="10", y="20", z=None)
-    pt.validate()
-    validator = lookup("equals", ["z", "y"])
-    pt = validator(pt)
+    from tinyschema.datavalidation import multi, ValidationObject, Invalid
 
-    data = pt.validate()
+    class EqualValidation(ValidationObject):
+        @multi(["z", "y"])
+        def equals(self, x, y):
+            if x != y:
+                raise Invalid("oops")
+    pt = Point(x="10", y="20", z=None)
+    data = EqualValidation()(pt)
     assert data["x"] == 10
 
 

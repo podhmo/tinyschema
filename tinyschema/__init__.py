@@ -422,7 +422,7 @@ def Container(schema):
 def Collection(schema):
     return PartialApplicationLike(partial(_Collection, schema), required=True, container=True).partial
 
-Field = PartialApplicationLike(_Field, pre=reject_None, required=True).partial
+Field = PartialApplicationLike(_Field, reject_None, required=True).partial
 IntegerField = Field(post=parse_int, type="integer").partial
 FloatField = Field(post=parse_float, type="number").partial
 BooleanField = Field(post=parse_bool, type="boolean").partial
